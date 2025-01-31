@@ -457,7 +457,17 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
         cmd_vel_timeout_ == rclcpp::Duration::from_seconds(0.0) ||
         current_time_diff < cmd_vel_timeout_)
       {
-        (void)received_velocity_msg_ptr_.bounded_push(std::move(msg));
+        for (size_t i = 0; i < 5; ++i)
+        {
+          if (received_velocity_msg_ptr_.bounded_push(msg))
+          {
+            break;
+          }
+          RCLCPP_WARN(
+            get_node()->get_logger(),
+            "Velocity command could not be stored in the queue, trying again");
+          std::this_thread::sleep_for(100us);
+        }
       }
       else
       {
